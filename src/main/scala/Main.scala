@@ -8,6 +8,10 @@ object Main {
       else
         new File(System.getProperty("user.home"), "SwissCommercialRegister")
 
+    if (!directory.exists()) {
+      directory.mkdirs()
+    }
+
     val downloader = Downloader(directory)
 
     downloader.run()

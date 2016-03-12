@@ -31,7 +31,7 @@ case class Downloader(directory: File) {
     } else {
       val result =
         for {
-          content <- SwissCommercialRegister.pageContent(link.url)
+          content <- link.content()
           _ <- saveToFile(content, file)
         } yield ()
 

@@ -4,7 +4,10 @@ import scala.io.{Codec, Source}
 import scala.util._
 
 object SwissCommercialRegister {
-  case class Link(url: URL, description: String)
+  case class Link(url: URL, description: String) {
+    def content(): Try[String] =
+      pageContent(url)
+  }
 
   private val PositionsPerPage = 1500
 
@@ -37,7 +40,7 @@ object SwissCommercialRegister {
       m <- LinkPattern.findAllMatchIn(content).toList
       urlString = m.group(1)
       description = m.group(2)
-    } yield Link(url = new URL(if (urlString.startsWith("http://")) urlString else s"$BaseUrl$urlString"), description)
+    } yield Link(url = new URL(if (urlString.startsWith("http")) urlString else s"$BaseUrl$urlString"), description)
   }
 
   private def resultCount(query: String): Try[Int] =
@@ -54,7 +57,7 @@ object SwissCommercialRegister {
       case None => Failure(new Exception("No result count found in page"))
     }
 
-  def pageContent(url: URL): Try[String] =
+  private def pageContent(url: URL): Try[String] =
     Try(Source.fromURL(url)(Codec("ISO-8859-1")).mkString)
 
   private def pageContent(query: String, position: Int): Try[String] =
