@@ -12,10 +12,10 @@ case class Querier(directory: File) {
       k <- 'a' to 'a' //'z'
       query = s"$i$j$k"
     } {
-      Dispatcher.dispatcher ! Dispatcher.DownloadForQuery(directory, query)
+      Dispatcher.dispatcher ! Dispatcher.DownloadQuery(directory, query)
     }
 
-    // @todo wait for downloads are done
+    // @todo wait for downloads to be finished
     implicit val timeout = Timeout(72 hours)
     //Dispatcher.dispatcher ? Dispatcher.???
   }

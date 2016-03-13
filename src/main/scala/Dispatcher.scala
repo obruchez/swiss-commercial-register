@@ -1,22 +1,13 @@
-import java.io.{PrintWriter, File}
-
 import akka.actor._
-import akka.routing.RoundRobinPool
-//import org.joda.time.DateTime
-//import org.joda.time.DateTime
-import scala.concurrent.Future
-import scala.concurrent.duration._
-import scala.util._
-
 import akka.routing.ConsistentHashingPool
-import akka.routing.ConsistentHashingRouter.ConsistentHashable
+import java.io.File
 
 class Dispatcher extends Actor {
   import context._
 
   def receive = {
-    case Dispatcher.DownloadForQuery(directory, query) =>
-      Dispatcher.downloader ! Downloader.DownloadForQuery(directory, query)
+    case Dispatcher.DownloadQuery(directory, query) =>
+      Dispatcher.downloader ! Downloader.DownloadQuery(directory, query)
       // @todo send back the result
     case Dispatcher.DownloadLink(directory, link) =>
       Dispatcher.downloader ! Downloader.DownloadLink(directory, link)
@@ -30,7 +21,7 @@ class Dispatcher extends Actor {
 
 object Dispatcher {
   sealed trait Message
-  case class DownloadForQuery(directory: File, query: String) extends Message
+  case class DownloadQuery(directory: File, query: String) extends Message
   case class DownloadLink(directory: File, link: SwissCommercialRegister.Link) extends Message
 
   lazy val system = ActorSystem("System")
@@ -38,8 +29,8 @@ object Dispatcher {
 
   // Make sure a given URL will always be mapped to the same actor
   private val downloaderHashMapping: PartialFunction[Any, Any] = {
-    case DownloadForQuery(_, query) => query
-    case DownloadLink(_, link) => link.url.toString
+    case Downloader.DownloadQuery(_, query) => query
+    case Downloader.DownloadLink(_, link) => link.url.toString
   }
 
   lazy val downloader = system.actorOf(

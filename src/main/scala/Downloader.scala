@@ -4,21 +4,20 @@ import scala.util._
 
 class Downloader(dispatcher: ActorRef) extends Actor {
   def receive = {
-    case Downloader.DownloadForQuery(directory, query) =>
+    case Downloader.DownloadQuery(directory, query) =>
       SwissCommercialRegister.reportLinks(query) match {
         case Success(reportLinks) =>
           for (reportLink <- reportLinks) {
             Dispatcher.dispatcher ! Dispatcher.DownloadLink(directory, reportLink)
           }
+          // @todo accumulate results and then send back result to sender
         case Failure(throwable) =>
+          sender() ! Downloader.QueryDownloadResult(query: String, Failure(throwable))
       }
-      // @todo send result to dispatcher
+
     case Downloader.DownloadLink(directory, link) =>
-      Downloader.downloadForLink(directory, link) match {
-        case Success(_) =>
-        case Failure(throable) =>
-      }
-      // @todo send result to dispatcher
+      val result = Downloader.downloadForLink(directory, link)
+      sender() ! Downloader.LinkDownloadResult(link, result)
   }
 
   //private val queryResults: collection.mutable.Map[String, ]
@@ -26,8 +25,12 @@ class Downloader(dispatcher: ActorRef) extends Actor {
 
 object Downloader {
   sealed trait Message
-  case class DownloadForQuery(directory: File, query: String) extends Message
+  case class DownloadQuery(directory: File, query: String) extends Message
   case class DownloadLink(directory: File, link: SwissCommercialRegister.Link) extends Message
+
+  sealed trait Response
+  case class QueryDownloadResult(query: String, result: Try[Unit])
+  case class LinkDownloadResult(link: SwissCommercialRegister.Link, result: Try[Unit])
 
   private def downloadForLink(directory: File, link: SwissCommercialRegister.Link): Try[Unit] = {
     val file = new File(directory, s"${link.description}.html")
