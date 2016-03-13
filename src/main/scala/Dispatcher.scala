@@ -8,16 +8,19 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util._
 
+import akka.routing.ConsistentHashingPool
+import akka.routing.ConsistentHashingRouter.ConsistentHashable
+
 sealed trait DispatcherMessage
-case class Download(directory: File, link: SwissCommercialRegister.Link) extends DispatcherMessage
+case class Dispatch(directory: File, link: SwissCommercialRegister.Link) extends DispatcherMessage
 
 class Dispatcher extends Actor {
   import context._
 
   def receive = {
-    case Download(directory, link) =>
-      // @todo dispatch
-      Dispatcher.downloadForLink(directory, link)
+    case Dispatch(directory, link) =>
+      Dispatcher.downloader ! Download(directory, link)
+      // @todo send back the result
 
       // @todo
       /*if (reschedule) {
@@ -28,9 +31,17 @@ class Dispatcher extends Actor {
 
 object Dispatcher {
   lazy val system = ActorSystem("System")
-  lazy val master = system.actorOf(Props[Dispatcher], name = "master")
-  //lazy val cache = system.actorOf(Props[Cache], name = "cache")
-  //lazy val fetcherRouter = system.actorOf(RoundRobinPool(10).props(Props(new Fetcher(cache))), "fetcher-pool")
+  lazy val dispatcher = system.actorOf(Props[Dispatcher], name = "master")
+
+  // Make sure a given URL will always be mapped to the same actor
+  private val downloaderHashMapping: PartialFunction[Any, Any] = {
+    case Download(directory, link) =>
+      link.url.toString
+  }
+
+  lazy val downloader = system.actorOf(
+    ConsistentHashingPool(5, hashMapping = downloaderHashMapping).props(Props(new Downloader(dispatcher))),
+    "downloader-pool")
 
   /*def start(): Unit = {
     master ! CheckCache(force = false, reschedule = true)
@@ -44,29 +55,6 @@ object Dispatcher {
   /*def forceFetch(): Unit = {
     master ! CheckCache(force = true, reschedule = false)
   }*/
-
-  private def downloadForLink(directory: File, link: SwissCommercialRegister.Link): Try[Unit] = {
-    val file = new File(directory, s"${link.description}.html")
-
-    if (file.exists()) {
-      Success(())
-    } else {
-      for {
-        content <- link.content()
-        _ <- saveToFile(content, file)
-      } yield ()
-    }
-  }
-
-  private def saveToFile(string: String, file: File): Try[Unit] = Try {
-    val writer = new PrintWriter(file)
-
-    try {
-      writer.write(string)
-    } finally {
-      writer.close()
-    }
-  }
 }
 
 /*
