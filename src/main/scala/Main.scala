@@ -12,8 +12,8 @@ object Main {
       directory.mkdirs()
     }
 
-    val downloader = Downloader(directory)
+    val querier = Querier(directory)
 
-    downloader.run()
+    querier.run()
   }
 }
