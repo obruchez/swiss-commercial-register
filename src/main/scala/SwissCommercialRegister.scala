@@ -38,7 +38,7 @@ object SwissCommercialRegister {
   private def allLinksFromContent(content: String): Try[Seq[Link]] = Try {
     for {
       m <- LinkPattern.findAllMatchIn(content).toList
-      urlString = m.group(1)
+      urlString = m.group(1).replaceAll("&amp;", "&")
       description = m.group(2)
     } yield Link(url = new URL(if (urlString.startsWith("http")) urlString else s"$BaseUrl$urlString"), description)
   }
@@ -57,8 +57,11 @@ object SwissCommercialRegister {
       case None => Failure(new Exception("No result count found in page"))
     }
 
+  private def pageContent(url: URL, encoding: String): Try[String] =
+    Try(Source.fromURL(url)(Codec(encoding)).mkString)
+
   private def pageContent(url: URL): Try[String] =
-    Try(Source.fromURL(url)(Codec("ISO-8859-1")).mkString)
+    pageContent(url: URL, "UTF-8") orElse pageContent(url: URL, "ISO-8859-1")
 
   private def pageContent(query: String, position: Int): Try[String] =
     pageContent(url(query, position))
