@@ -8,6 +8,12 @@ object SwissCommercialRegister {
     def content(): Try[String] =
       pageContent(url) flatMap { content =>
         documentMovedContent(content) orElse frameContent(content) orElse Success(content)
+      } flatMap { content =>
+        // Check for empty content
+        if (content.trim.isEmpty || content.toLowerCase.contains("an error has occurred. please try again later."))
+          Failure(new Exception("No content"))
+        else
+          Success(content)
       }
 
     private def documentMovedContent(content: String): Try[String] =
