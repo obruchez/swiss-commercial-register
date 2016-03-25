@@ -11,7 +11,8 @@ case class Searcher(directory: File) {
   implicit val timeout = Timeout(72 hours)
 
   def run(): Unit = {
-    val resultFuture = Future.sequence {
+    // Don't send queries in parallel
+    val results =
       for {
         i <- 'a' to 'z'
         j <- 'a' to 'z'
@@ -19,11 +20,9 @@ case class Searcher(directory: File) {
         searchQuery = s"$i$j$k"
       } yield {
         val askFuture = dispatcher ? Dispatcher.DownloadSearch(searchQuery, retryCount = Dispatcher.DefaultRetryCount)
-        askFuture.mapTo[Dispatcher.SearchDownloadResult].map(sdr => sdr.query -> sdr.result)
+        val resultFuture = askFuture.mapTo[Dispatcher.SearchDownloadResult].map(sdr => sdr.query -> sdr.result)
+        Await.result(resultFuture, timeout.duration)
       }
-    }
-
-    val results = Await.result(resultFuture, timeout.duration)
 
     val successCount = results.count(_._2.isSuccess)
     val failureCount = results.count(_._2.isFailure)
