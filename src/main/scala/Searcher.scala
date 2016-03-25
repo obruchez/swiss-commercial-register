@@ -8,17 +8,23 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 
 case class Searcher(directory: File) {
-  implicit val timeout = Timeout(72 hours)
+  implicit val timeout = Timeout(1000 hours)
 
   def run(): Unit = {
-    // Don't send queries in parallel
-    val results =
+    val searchQueries =
       for {
         i <- 'a' to 'z'
         j <- 'a' to 'z'
         k <- 'a' to 'z'
-        searchQuery = s"$i$j$k"
+      } yield s"$i$j$k"
+
+    // Don't send search queries in parallel
+    val results =
+      for {
+        (searchQuery, index) <- searchQueries.zipWithIndex
       } yield {
+        println(f"Progress: $index/${searchQueries.size} (${index.toDouble / searchQueries.size.toDouble * 100.0}%.1f%%)")
+
         val askFuture = dispatcher ? Dispatcher.DownloadSearch(searchQuery, retryCount = Dispatcher.DefaultRetryCount)
         val resultFuture = askFuture.mapTo[Dispatcher.SearchDownloadResult].map(sdr => sdr.query -> sdr.result)
         Await.result(resultFuture, timeout.duration)
