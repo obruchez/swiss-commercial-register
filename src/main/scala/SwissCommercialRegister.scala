@@ -7,24 +7,37 @@ object SwissCommercialRegister {
   case class Link(url: URL, description: String) {
     def content(): Try[String] =
       pageContent(url) flatMap { content =>
-        documentMovedContent(content) orElse Success(content)
+        documentMovedContent(content) orElse frameContent(content) orElse Success(content)
       }
 
     private def documentMovedContent(content: String): Try[String] =
       if (content.toLowerCase.contains("document moved") || content.toLowerCase.contains("document has moved"))
-        allLinksFromContent(baseUrl = url.toString, content) flatMap { links =>
-          links.find(_.url.toString.contains(description)) match {
-            case Some(link) =>
-              pageContent(link.url)
-            case None =>
-              Failure(new NoSuchElementException)
-          }
-        }
+        allLinksFromContent(baseUrl = Link.baseUrl(url).toString, content).flatMap(contentOfFirstLinkWithDescriptionInUrl)
       else
         Failure(new NoSuchElementException)
+
+    private def frameContent(content: String): Try[String] =
+      allFrameLinksFromContent(baseUrl = Link.baseUrl(url).toString, content).flatMap(contentOfFirstLinkWithDescriptionInUrl)
+
+    private def contentOfFirstLinkWithDescriptionInUrl(links: Seq[Link]): Try[String] =
+      contentOfFirstLinkWithStringInUrl(links, string = description) orElse
+        contentOfFirstLinkWithStringInUrl(links, string = "companyOfrcId13")
+
+    private def contentOfFirstLinkWithStringInUrl(links: Seq[Link], string: String): Try[String] =
+      links.find(_.url.toString.contains(string)) match {
+        case Some(link) =>
+          pageContent(link.url)
+        case None =>
+          Failure(new NoSuchElementException)
+      }
   }
 
   object Link {
+    def baseUrl(url: URL): URL = {
+      val BaseUrlPattern = """(https?://[^/]+)""".r
+      BaseUrlPattern.findFirstIn(url.toString).map(new URL(_)).getOrElse(url)
+    }
+
     def cleanUrl(url: String): String =
       url.replaceAll("&amp;", "&").replaceAll("&#59;jsessionid=[a-z0-9]+", "")
   }
