@@ -6,10 +6,8 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util._
 
-case class Dispatcher(directory: File) extends Actor {
+case class Dispatcher(directory: File, implicit val timeout: Timeout) extends Actor {
   import context._
-
-  implicit val timeout = Timeout(72 hours)
 
   def receive = {
     case Dispatcher.DownloadSearch(query, retryCount) =>

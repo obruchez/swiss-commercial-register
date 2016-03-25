@@ -33,7 +33,7 @@ case class Searcher(directory: File) {
   }
 
   private val system = ActorSystem("System")
-  private val dispatcher = system.actorOf(Props(new Dispatcher(directory)), name = "master")
+  private val dispatcher = system.actorOf(Props(new Dispatcher(directory, timeout)), name = "master")
 
   def stop(): Unit = {
     system.terminate()
