@@ -10,7 +10,7 @@ object SwissCommercialRegister {
         documentMovedContent(content) orElse frameContent(content) orElse Success(content)
       } flatMap { content =>
         // Check for empty content
-        if (content.trim.isEmpty || content.toLowerCase.contains("an error has occurred. please try again later."))
+        if (content.length < 1000 || content.toLowerCase.contains("an error has occurred. please try again later."))
           Failure(new Exception("No content"))
         else
           Success(content)
