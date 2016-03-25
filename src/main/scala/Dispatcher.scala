@@ -2,7 +2,6 @@ import akka.actor._
 import akka.routing.ConsistentHashingPool
 import akka.util.Timeout
 import java.io.File
-import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util._
 
@@ -59,10 +58,14 @@ case class Dispatcher(directory: File, implicit val timeout: Timeout) extends Ac
 
       result match {
         case Success(links) =>
-          val linksToDownload = links.map(LinkToDownload(_, remainingRetryCount = search.retryCount))
-          searchesByQuery(query) = search.copy(state = Downloading(linksToDownload))
+          if (links.nonEmpty) {
+            val linksToDownload = links.map(LinkToDownload(_, remainingRetryCount = search.retryCount))
+            searchesByQuery(query) = search.copy(state = Downloading(linksToDownload))
 
-          links.foreach(link => downloader ! Downloader.DownloadLink(query, link))
+            links.foreach(link => downloader ! Downloader.DownloadLink(query, link))
+          } else {
+            search.sender ! Dispatcher.SearchDownloadResult(query, Success(()))
+          }
         case Failure(throwable) =>
           search.state match {
             case Searching(remainingRetryCount) =>
