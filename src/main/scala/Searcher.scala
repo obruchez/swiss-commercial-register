@@ -13,9 +13,9 @@ case class Searcher(directory: File) {
   def run(): Unit = {
     val resultFuture = Future.sequence {
       for {
-        i <- 'a' to 'a' //'z' @todo
-        j <- 'a' to 'a' //'z' @todo
-        k <- 'a' to 'a' //'z' @todo
+        i <- 'a' to 'z'
+        j <- 'a' to 'z'
+        k <- 'a' to 'z'
         searchQuery = s"$i$j$k"
       } yield {
         val askFuture = dispatcher ? Dispatcher.DownloadSearch(searchQuery, retryCount = Dispatcher.DefaultRetryCount)
