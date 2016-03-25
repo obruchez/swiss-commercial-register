@@ -2,35 +2,26 @@ import akka.actor.{Actor, ActorRef}
 import java.io.{File, PrintWriter}
 import scala.util._
 
-class Downloader(dispatcher: ActorRef) extends Actor {
+class Downloader(directory: File, dispatcher: ActorRef) extends Actor {
   def receive = {
-    case Downloader.DownloadQuery(directory, query) =>
-      SwissCommercialRegister.reportLinks(query) match {
-        case Success(reportLinks) =>
-          for (reportLink <- reportLinks) {
-            Dispatcher.dispatcher ! Dispatcher.DownloadLink(directory, reportLink)
-          }
-          // @todo accumulate results and then send back result to sender
-        case Failure(throwable) =>
-          sender() ! Downloader.QueryDownloadResult(query: String, Failure(throwable))
-      }
+    case Downloader.DownloadSearch(query) =>
+      val result = SwissCommercialRegister.reportLinks(query)
+      sender () ! Downloader.SearchDownloadResult(query, result)
 
-    case Downloader.DownloadLink(directory, link) =>
+    case Downloader.DownloadLink(query, link) =>
       val result = Downloader.downloadForLink(directory, link)
-      sender() ! Downloader.LinkDownloadResult(link, result)
+      sender() ! Downloader.LinkDownloadResult(query, link, result)
   }
-
-  //private val queryResults: collection.mutable.Map[String, ]
 }
 
 object Downloader {
   sealed trait Message
-  case class DownloadQuery(directory: File, query: String) extends Message
-  case class DownloadLink(directory: File, link: SwissCommercialRegister.Link) extends Message
+  case class DownloadSearch(query: String) extends Message
+  case class DownloadLink(query: String, link: SwissCommercialRegister.Link) extends Message
 
   sealed trait Response
-  case class QueryDownloadResult(query: String, result: Try[Unit])
-  case class LinkDownloadResult(link: SwissCommercialRegister.Link, result: Try[Unit])
+  case class SearchDownloadResult(query: String, result: Try[Seq[SwissCommercialRegister.Link]])
+  case class LinkDownloadResult(query: String, link: SwissCommercialRegister.Link, result: Try[Unit])
 
   private def downloadForLink(directory: File, link: SwissCommercialRegister.Link): Try[Unit] = {
     val file = new File(directory, s"${link.description}.html")

@@ -12,8 +12,8 @@ object Main {
       directory.mkdirs()
     }
 
-    val querier = Querier(directory)
-
-    querier.run()
+    val searcher = Searcher(directory)
+    searcher.run()
+    searcher.stop()
   }
 }
