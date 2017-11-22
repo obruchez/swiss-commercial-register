@@ -11,19 +11,21 @@ object SwissCommercialRegister {
       } flatMap { content =>
         // Check for empty content
         if (content.length < 1000 || content.toLowerCase.contains(
-              "an error has occurred. please try again later."))
+              "an error has occurred. please try again later.")) {
           Failure(new Exception("No content"))
-        else
+        } else {
           Success(content)
+        }
       }
 
     private def documentMovedContent(content: String): Try[String] =
       if (content.toLowerCase.contains("document moved") || content.toLowerCase
-            .contains("document has moved"))
+            .contains("document has moved")) {
         allLinksFromContent(baseUrl = Link.baseUrl(url).toString, content)
           .flatMap(contentOfFirstLinkWithDescriptionInUrl)
-      else
+      } else {
         Failure(new NoSuchElementException)
+      }
 
     private def frameContent(content: String): Try[String] =
       allFrameLinksFromContent(baseUrl = Link.baseUrl(url).toString, content)
@@ -84,9 +86,7 @@ object SwissCommercialRegister {
       urlString = Link.cleanUrl(m.group(1))
       description = m.group(2)
     } yield
-      Link(url = new URL(
-             if (urlString.startsWith("http")) urlString
-             else s"$baseUrl$urlString"),
+      Link(url = new URL(if (urlString.startsWith("http")) urlString else s"$baseUrl$urlString"),
            description)
   }
 
@@ -97,9 +97,7 @@ object SwissCommercialRegister {
       m <- FramePattern.findAllMatchIn(content).toList
       urlString = m.group(1).replaceAll("&amp;", "&")
     } yield
-      Link(url = new URL(
-             if (urlString.startsWith("http")) urlString
-             else s"$baseUrl$urlString"),
+      Link(url = new URL(if (urlString.startsWith("http")) urlString else s"$baseUrl$urlString"),
            description = "")
   }
 
@@ -141,6 +139,6 @@ object SwissCommercialRegister {
   private val BaseQueryUrl = "http://www.zefix.ch"
 
   private def queryUrl(query: String, position: Int): URL =
-    new URL(
-      s"$BaseQueryUrl/WebServices/Zefix/Zefix.asmx/SearchFirm?name=${query.replaceAll(" ", "%20")}&suche_nach=-&rf=&sitz=&sitzgem=&id=&language=4&phonetisch=no&posMin=$position")
+    new URL(s"$BaseQueryUrl/WebServices/Zefix/Zefix.asmx/SearchFirm?" + s"name=${query
+      .replaceAll(" ", "%20")}&" + s"suche_nach=-&rf=&sitz=&sitzgem=&id=&language=4&phonetisch=no&posMin=$position")
 }

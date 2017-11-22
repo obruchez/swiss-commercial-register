@@ -8,7 +8,7 @@ import scala.util._
 case class Dispatcher(directory: File, implicit val timeout: Timeout) extends Actor {
   import context._
 
-  def receive = {
+  def receive: Receive = {
     case Dispatcher.DownloadSearch(query, retryCount) =>
       createSearchState(sender(), query, retryCount)
 
@@ -29,13 +29,15 @@ case class Dispatcher(directory: File, implicit val timeout: Timeout) extends Ac
 
     def withOneRetryLess(link: SwissCommercialRegister.Link): Downloading =
       copy(linksToDownload = this.linksToDownload flatMap { linkToDownload =>
-        if (linkToDownload.link == link)
-          if (linkToDownload.remainingRetryCount <= 0)
+        if (linkToDownload.link == link) {
+          if (linkToDownload.remainingRetryCount <= 0) {
             None
-          else
+          } else {
             Some(linkToDownload.copy(remainingRetryCount = linkToDownload.remainingRetryCount - 1))
-        else
+          }
+        } else {
           Some(linkToDownload)
+        }
       })
 
     def remainingRetryCount(link: SwissCommercialRegister.Link): Option[Int] =
@@ -143,8 +145,10 @@ case class Dispatcher(directory: File, implicit val timeout: Timeout) extends Ac
     case Downloader.DownloadLink(_, link) => link.url.toString
   }
 
+  private val DownloaderPoolSize = 5
+
   private val downloader = system.actorOf(
-    ConsistentHashingPool(5, hashMapping = downloaderHashMapping)
+    ConsistentHashingPool(DownloaderPoolSize, hashMapping = downloaderHashMapping)
       .props(Props(new Downloader(directory, self))),
     "downloader-pool")
 }

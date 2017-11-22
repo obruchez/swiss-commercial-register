@@ -3,7 +3,7 @@ import java.io.{File, PrintWriter}
 import scala.util._
 
 class Downloader(directory: File, dispatcher: ActorRef) extends Actor {
-  def receive = {
+  def receive: Receive = {
     case Downloader.DownloadSearch(query) =>
       val result = SwissCommercialRegister.reportLinks(query)
       sender() ! Downloader.SearchDownloadResult(query, result)
