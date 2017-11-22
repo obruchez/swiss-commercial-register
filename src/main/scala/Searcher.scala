@@ -23,10 +23,15 @@ case class Searcher(directory: File) {
       for {
         (searchQuery, index) <- searchQueries.zipWithIndex
       } yield {
-        println(f"Progress: $index/${searchQueries.size} (${index.toDouble / searchQueries.size.toDouble * 100.0}%.1f%%)")
+        println(
+          f"Progress: $index/${searchQueries.size} (${index.toDouble / searchQueries.size.toDouble * 100.0}%.1f%%)")
 
-        val askFuture = dispatcher ? Dispatcher.DownloadSearch(searchQuery, retryCount = Dispatcher.DefaultRetryCount)
-        val resultFuture = askFuture.mapTo[Dispatcher.SearchDownloadResult].map(sdr => sdr.query -> sdr.result)
+        val askFuture = dispatcher ? Dispatcher.DownloadSearch(searchQuery,
+                                                               retryCount =
+                                                                 Dispatcher.DefaultRetryCount)
+        val resultFuture = askFuture
+          .mapTo[Dispatcher.SearchDownloadResult]
+          .map(sdr => sdr.query -> sdr.result)
         Await.result(resultFuture, timeout.duration)
       }
 
@@ -38,7 +43,8 @@ case class Searcher(directory: File) {
   }
 
   private val system = ActorSystem("System")
-  private val dispatcher = system.actorOf(Props(new Dispatcher(directory, timeout)), name = "master")
+  private val dispatcher =
+    system.actorOf(Props(new Dispatcher(directory, timeout)), name = "master")
 
   def stop(): Unit = {
     system.terminate()

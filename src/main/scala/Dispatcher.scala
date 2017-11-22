@@ -33,7 +33,7 @@ case class Dispatcher(directory: File, implicit val timeout: Timeout) extends Ac
           if (linkToDownload.remainingRetryCount <= 0)
             None
           else
-            Some(linkToDownload.copy(remainingRetryCount = linkToDownload.remainingRetryCount -1))
+            Some(linkToDownload.copy(remainingRetryCount = linkToDownload.remainingRetryCount - 1))
         else
           Some(linkToDownload)
       })
@@ -52,14 +52,16 @@ case class Dispatcher(directory: File, implicit val timeout: Timeout) extends Ac
     downloader ! Downloader.DownloadSearch(query)
   }
 
-  private def updateSearchState(query: String, result: Try[Seq[SwissCommercialRegister.Link]]): Unit =
+  private def updateSearchState(query: String,
+                                result: Try[Seq[SwissCommercialRegister.Link]]): Unit =
     searchesByQuery.get(query) foreach { search =>
       // Ignore message if query not found
 
       result match {
         case Success(links) =>
           if (links.nonEmpty) {
-            val linksToDownload = links.map(LinkToDownload(_, remainingRetryCount = search.retryCount))
+            val linksToDownload =
+              links.map(LinkToDownload(_, remainingRetryCount = search.retryCount))
             searchesByQuery(query) = search.copy(state = Downloading(linksToDownload))
 
             links.foreach(link => downloader ! Downloader.DownloadLink(query, link))
@@ -84,7 +86,8 @@ case class Dispatcher(directory: File, implicit val timeout: Timeout) extends Ac
               // Unexpected state
               searchesByQuery.remove(query)
 
-              val exception = new Exception(s"Unexpected state while searching for '$query'")
+              val exception =
+                new Exception(s"Unexpected state while searching for '$query'")
               search.sender ! Dispatcher.SearchDownloadResult(query, Failure(exception))
           }
       }
@@ -128,7 +131,8 @@ case class Dispatcher(directory: File, implicit val timeout: Timeout) extends Ac
           // Unexpected state
           searchesByQuery.remove(query)
 
-          val exception = new Exception(s"Unexpected state while searching for '$query'")
+          val exception =
+            new Exception(s"Unexpected state while searching for '$query'")
           search.sender ! Dispatcher.SearchDownloadResult(query, Failure(exception))
       }
     }
@@ -140,7 +144,8 @@ case class Dispatcher(directory: File, implicit val timeout: Timeout) extends Ac
   }
 
   private val downloader = system.actorOf(
-    ConsistentHashingPool(5, hashMapping = downloaderHashMapping).props(Props(new Downloader(directory, self))),
+    ConsistentHashingPool(5, hashMapping = downloaderHashMapping)
+      .props(Props(new Downloader(directory, self))),
     "downloader-pool")
 }
 
