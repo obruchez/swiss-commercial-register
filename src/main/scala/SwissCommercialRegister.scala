@@ -10,8 +10,11 @@ object SwissCommercialRegister {
         documentMovedContent(content) orElse frameContent(content) orElse Success(content)
       } flatMap { content =>
         // Check for empty content
-        if (content.length < 1000 || content.toLowerCase.contains(
-              "an error has occurred. please try again later.")) {
+        if (
+          content.length < 1000 || content.toLowerCase.contains(
+            "an error has occurred. please try again later."
+          )
+        ) {
           Failure(new Exception("No content"))
         } else {
           Success(content)
@@ -19,8 +22,10 @@ object SwissCommercialRegister {
       }
 
     private def documentMovedContent(content: String): Try[String] =
-      if (content.toLowerCase.contains("document moved") || content.toLowerCase
-            .contains("document has moved")) {
+      if (
+        content.toLowerCase.contains("document moved") || content.toLowerCase
+          .contains("document has moved")
+      ) {
         allLinksFromContent(baseUrl = Link.baseUrl(url).toString, content)
           .flatMap(contentOfFirstLinkWithDescriptionInUrl)
       } else {
@@ -85,9 +90,10 @@ object SwissCommercialRegister {
       m <- LinkPattern.findAllMatchIn(content).toList
       urlString = Link.cleanUrl(m.group(1))
       description = m.group(2)
-    } yield
-      Link(url = new URL(if (urlString.startsWith("http")) urlString else s"$baseUrl$urlString"),
-           description)
+    } yield Link(
+      url = new URL(if (urlString.startsWith("http")) urlString else s"$baseUrl$urlString"),
+      description
+    )
   }
 
   private val FramePattern = """<frame[^>]+src="([^"]*)"""".r
@@ -96,9 +102,10 @@ object SwissCommercialRegister {
     for {
       m <- FramePattern.findAllMatchIn(content).toList
       urlString = m.group(1).replaceAll("&amp;", "&")
-    } yield
-      Link(url = new URL(if (urlString.startsWith("http")) urlString else s"$baseUrl$urlString"),
-           description = "")
+    } yield Link(
+      url = new URL(if (urlString.startsWith("http")) urlString else s"$baseUrl$urlString"),
+      description = ""
+    )
   }
 
   private def resultCount(query: String): Try[Int] =
@@ -127,7 +134,7 @@ object SwissCommercialRegister {
         response.body
     }
 
-    //Try(Source.fromURL(url)(Codec(encoding)).mkString)
+    // Try(Source.fromURL(url)(Codec(encoding)).mkString)
   }
 
   private def pageContent(url: URL): Try[String] =
@@ -139,6 +146,8 @@ object SwissCommercialRegister {
   private val BaseQueryUrl = "http://www.zefix.ch"
 
   private def queryUrl(query: String, position: Int): URL =
-    new URL(s"$BaseQueryUrl/WebServices/Zefix/Zefix.asmx/SearchFirm?" + s"name=${query
-      .replaceAll(" ", "%20")}&" + s"suche_nach=-&rf=&sitz=&sitzgem=&id=&language=4&phonetisch=no&posMin=$position")
+    new URL(
+      s"$BaseQueryUrl/WebServices/Zefix/Zefix.asmx/SearchFirm?" + s"name=${query
+        .replaceAll(" ", "%20")}&" + s"suche_nach=-&rf=&sitz=&sitzgem=&id=&language=4&phonetisch=no&posMin=$position"
+    )
 }

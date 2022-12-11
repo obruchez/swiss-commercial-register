@@ -21,9 +21,11 @@ object Downloader {
 
   sealed trait Response
   case class SearchDownloadResult(query: String, result: Try[Seq[SwissCommercialRegister.Link]])
-  case class LinkDownloadResult(query: String,
-                                link: SwissCommercialRegister.Link,
-                                result: Try[Unit])
+  case class LinkDownloadResult(
+      query: String,
+      link: SwissCommercialRegister.Link,
+      result: Try[Unit]
+  )
 
   private def downloadForLink(directory: File, link: SwissCommercialRegister.Link): Try[Unit] = {
     val file = new File(directory, s"${link.description}.html")

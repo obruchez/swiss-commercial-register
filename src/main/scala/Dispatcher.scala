@@ -54,8 +54,10 @@ case class Dispatcher(directory: File, implicit val timeout: Timeout) extends Ac
     downloader ! Downloader.DownloadSearch(query)
   }
 
-  private def updateSearchState(query: String,
-                                result: Try[Seq[SwissCommercialRegister.Link]]): Unit =
+  private def updateSearchState(
+      query: String,
+      result: Try[Seq[SwissCommercialRegister.Link]]
+  ): Unit =
     searchesByQuery.get(query) foreach { search =>
       // Ignore message if query not found
 
@@ -95,9 +97,11 @@ case class Dispatcher(directory: File, implicit val timeout: Timeout) extends Ac
       }
     }
 
-  private def updateSearchState(query: String,
-                                link: SwissCommercialRegister.Link,
-                                result: Try[Unit]): Unit =
+  private def updateSearchState(
+      query: String,
+      link: SwissCommercialRegister.Link,
+      result: Try[Unit]
+  ): Unit =
     searchesByQuery.get(query) foreach { search =>
       // Ignore message if query not found
 
@@ -150,7 +154,8 @@ case class Dispatcher(directory: File, implicit val timeout: Timeout) extends Ac
   private val downloader = system.actorOf(
     ConsistentHashingPool(DownloaderPoolSize, hashMapping = downloaderHashMapping)
       .props(Props(new Downloader(directory, self))),
-    "downloader-pool")
+    "downloader-pool"
+  )
 }
 
 object Dispatcher {

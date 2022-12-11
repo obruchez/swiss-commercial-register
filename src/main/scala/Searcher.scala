@@ -24,11 +24,13 @@ case class Searcher(directory: File) {
         (searchQuery, index) <- searchQueries.zipWithIndex
       } yield {
         println(
-          f"Progress: $index/${searchQueries.size} (${index.toDouble / searchQueries.size.toDouble * 100.0}%.1f%%)")
+          f"Progress: $index/${searchQueries.size} (${index.toDouble / searchQueries.size.toDouble * 100.0}%.1f%%)"
+        )
 
-        val askFuture = dispatcher ? Dispatcher.DownloadSearch(searchQuery,
-                                                               retryCount =
-                                                                 Dispatcher.DefaultRetryCount)
+        val askFuture = dispatcher ? Dispatcher.DownloadSearch(
+          searchQuery,
+          retryCount = Dispatcher.DefaultRetryCount
+        )
         val resultFuture = askFuture
           .mapTo[Dispatcher.SearchDownloadResult]
           .map(sdr => sdr.query -> sdr.result)
